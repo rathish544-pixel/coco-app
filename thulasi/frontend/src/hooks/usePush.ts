@@ -10,16 +10,14 @@ export type PushState =
   | 'off'
   | 'denied'
   | 'on'
-  | 'blocked' // browser supports it, but the server has no VAPID keys yet
+  | 'blocked'
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
   const normalised = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
   const raw = atob(normalised)
   const output = new Uint8Array(raw.length)
-  for (let i = 0; i < raw.length; i += 1) {
-    output[i] = raw.charCodeAt(i)
-  }
+  for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i)
   return output
 }
 
@@ -33,7 +31,6 @@ export function pushSupported(): boolean {
   )
 }
 
-/** Registers /sw.js once per session. */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null
   try {
@@ -57,18 +54,9 @@ export function usePush() {
   const [message, setMessage] = useState<string | null>(null)
 
   const inspect = useCallback(async () => {
-    if (!pushSupported()) {
-      setState('unsupported')
-      return
-    }
-    if (!config?.vapid_public_key) {
-      setState('blocked')
-      return
-    }
-    if (Notification.permission === 'denied') {
-      setState('denied')
-      return
-    }
+    if (!pushSupported()) return void setState('unsupported')
+    if (!config?.vapid_public_key) return void setState('blocked')
+    if (Notification.permission === 'denied') return void setState('denied')
 
     const registration = await navigator.serviceWorker.ready
     const subscription = await registration.pushManager.getSubscription()
@@ -120,11 +108,12 @@ export function usePush() {
         }
 
         const existing = await registration.pushManager.getSubscription()
+        const applicationServerKey = urlBase64ToUint8Array(config.vapid_public_key)
         const subscription =
           existing ??
           (await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(config.vapid_public_key),
+            applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
           }))
 
         await subscribeToPush(
