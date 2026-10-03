@@ -9,6 +9,8 @@ from app.config import BASE_DIR, settings
 logger = logging.getLogger("thulasi.db")
 
 DATABASE_URL = settings.DATABASE_URL
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # SQLite needs a cross-thread flag because FastAPI serves requests from a pool.
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
