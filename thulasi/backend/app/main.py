@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import MEDIA_DIR, settings
-from app.database import check_database, init_db
+from app.database import check_database, init_db, migrate_legacy_sqlite
 from app.routes import auth, media, memories, notifications, photos, songs
 
 logging.basicConfig(
@@ -25,6 +25,7 @@ BOOTED_AT = time.time()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    migrate_legacy_sqlite()
     logger.info(
         "%s is ready (env=%s, push=%s)",
         settings.APP_NAME,
