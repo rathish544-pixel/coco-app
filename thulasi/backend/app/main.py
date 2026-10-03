@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import MEDIA_DIR, settings
 from app.database import check_database, init_db, migrate_legacy_sqlite
 from app.routes import auth, media, memories, notifications, photos, songs
+from app.storage import migrate_disk_media
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +27,7 @@ BOOTED_AT = time.time()
 async def lifespan(app: FastAPI):
     init_db()
     migrate_legacy_sqlite()
+    migrate_disk_media()
     logger.info(
         "%s is ready (env=%s, push=%s)",
         settings.APP_NAME,
@@ -59,8 +61,6 @@ app.include_router(songs.router)
 app.include_router(photos.router)
 app.include_router(media.router)
 
-# Uploaded photos and audio are served straight back to the app.
-app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 
 @app.get("/")
