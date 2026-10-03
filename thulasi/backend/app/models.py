@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, LargeBinary, String, Text
 
 from app.database import Base
 
@@ -92,6 +92,19 @@ class Song(Base):
     audio_url = Column(Text, nullable=True)
     cover_url = Column(Text, nullable=True)
     external_url = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class MediaFile(Base):
+    """Persistent uploaded photo/audio bytes stored in PostgreSQL."""
+
+    __tablename__ = "media_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(255), nullable=False, unique=True, index=True)
+    content_type = Column(String(90), nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    size_bytes = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utcnow)
 
 
